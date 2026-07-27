@@ -6,6 +6,9 @@ export default defineConfig({
     environment: "node",
     globals: true,
     exclude: ["tests/e2e/**", "node_modules/**"],
+    env: {
+      ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || "vitest-test-encryption-key-32-chars!!",
+    },
   },
   resolve: {
     alias: {

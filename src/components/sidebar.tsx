@@ -111,12 +111,12 @@ export function Sidebar({ orgSlug = "demo-salon", onNavigate }: SidebarProps) {
           Share your link with clients to get booked instantly.
         </p>
         <Link
-          href={`/${orgSlug}`}
+          href={`/book/${orgSlug}`}
           target="_blank"
           onClick={() => onNavigate?.()}
           className="block mt-3 text-xs font-medium text-violet-400 hover:underline truncate"
         >
-          bookora.com/{orgSlug}
+          bookora.com/book/{orgSlug}
         </Link>
       </div>
     </aside>

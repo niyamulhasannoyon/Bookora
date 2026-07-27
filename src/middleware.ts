@@ -9,8 +9,10 @@ export default auth((req) => {
   const isLoggedIn = !!req.auth;
 
   const isAuthRoute =
+    // Legacy redirect paths (still exist for backward compat)
     nextUrl.pathname.startsWith("/login") ||
     nextUrl.pathname.startsWith("/register") ||
+    // Modern auth routes
     nextUrl.pathname.startsWith("/sign-in") ||
     nextUrl.pathname.startsWith("/sign-up") ||
     nextUrl.pathname.startsWith("/forgot-password") ||
@@ -27,23 +29,19 @@ export default auth((req) => {
   // Redirect authenticated users away from login/register pages to dashboard
   if (isAuthRoute) {
     if (isLoggedIn) {
-      return NextResponse.redirect(new URL("/demo-salon/dashboard", nextUrl));
+      return NextResponse.redirect(new URL("/dashboard", nextUrl));
     }
     return NextResponse.next();
   }
 
   // Protected route checking:
-  // Note: /demo-salon paths are accessible for public demo preview, but standard user dashboard routes require auth
   const isProtectedPath =
     nextUrl.pathname.startsWith("/onboarding") ||
-    (nextUrl.pathname.includes("/dashboard") && !nextUrl.pathname.startsWith("/demo-salon")) ||
-    (nextUrl.pathname.includes("/services") && !nextUrl.pathname.startsWith("/demo-salon")) ||
-    (nextUrl.pathname.includes("/availability") && !nextUrl.pathname.startsWith("/demo-salon")) ||
-    (nextUrl.pathname.includes("/settings") && !nextUrl.pathname.startsWith("/demo-salon"));
+    nextUrl.pathname.startsWith("/dashboard");
 
   if (isProtectedPath && !isLoggedIn) {
     const callbackUrl = encodeURIComponent(nextUrl.pathname + nextUrl.search);
-    return NextResponse.redirect(new URL(`/login?callbackUrl=${callbackUrl}`, nextUrl));
+    return NextResponse.redirect(new URL(`/sign-in?callbackUrl=${callbackUrl}`, nextUrl));
   }
 
   return NextResponse.next();

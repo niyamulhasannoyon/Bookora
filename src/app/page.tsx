@@ -9,14 +9,13 @@ import {
   Dumbbell,
   Laptop,
   Wrench,
-  CheckCircle2,
   ArrowRight,
   ShieldCheck,
   Zap,
   Globe2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardTitle, CardDescription } from "@/components/ui/card";
 import { Navbar } from "@/components/navbar";
 
 export default function LandingPage() {
@@ -62,7 +61,7 @@ export default function LandingPage() {
                 <ArrowRight className="h-5 w-5" />
               </Button>
             </Link>
-            <Link href="/demo-salon">
+            <Link href="/book/demo-salon">
               <Button variant="outline" size="lg" className="w-full sm:w-auto text-base gap-2 px-8">
                 <Globe2 className="h-5 w-5 text-violet-400" />
                 <span>Explore Live Demo Storefront</span>

@@ -1,10 +1,6 @@
-import { Suspense } from "react";
-import SignInPage from "../sign-in/page";
+// This file is intentionally removed. Use "sign-in" route instead.
+import { redirect } from "next/navigation";
 
 export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400">Loading...</div>}>
-      <SignInPage />
-    </Suspense>
-  );
+  redirect("/sign-in");
 }

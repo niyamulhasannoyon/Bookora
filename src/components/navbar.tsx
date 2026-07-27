@@ -79,7 +79,7 @@ export function Navbar({ orgSlug }: { orgSlug?: string }) {
                   <span className="hidden sm:inline">Share & Embed</span>
                   <span className="sm:hidden">Share</span>
                 </Button>
-                <Link href={`/${orgSlug}`} target="_blank">
+                <Link href={`/book/${orgSlug}`} target="_blank">
                   <Button variant="outline" size="sm" className="gap-2 border-slate-800 hover:bg-slate-800/80">
                     <span className="hidden sm:inline">View Public Page</span>
                     <span className="sm:hidden">View</span>
