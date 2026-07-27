@@ -5,8 +5,10 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { loginSchema } from "@/lib/validators";
+import { authConfig } from "@/lib/auth.config";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   adapter: PrismaAdapter(db),
   providers: [
     GoogleProvider({
@@ -60,35 +62,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     strategy: "jwt",
   },
   callbacks: {
-    async session({ session, token }) {
-      if (session.user && token.sub) {
-        session.user.id = token.sub;
-        session.user.emailVerified = token.emailVerified as Date | null;
-      }
-      return session;
-    },
+    ...authConfig.callbacks,
     async jwt({ token, user, account }) {
       if (user) {
         token.sub = user.id;
         token.emailVerified = user.emailVerified;
       } else if (token.sub) {
-        // Refresh emailVerified status from DB if needed
-        const dbUser = await db.user.findUnique({
-          where: { id: token.sub },
-          select: { emailVerified: true },
-        });
-        if (dbUser) {
-          token.emailVerified = dbUser.emailVerified;
+        try {
+          const dbUser = await db.user.findUnique({
+            where: { id: token.sub },
+            select: { emailVerified: true },
+          });
+          if (dbUser) {
+            token.emailVerified = dbUser.emailVerified;
+          }
+        } catch {
+          // Ignore DB error during JWT refresh fallback
         }
       }
-      // Note: We intentionally do NOT store account.access_token in the JWT.
-      // OAuth access tokens should be stored server-side (e.g. in the Account model)
-      // and retrieved only when needed for provider-specific API calls.
       return token;
     },
-  },
-  pages: {
-    signIn: "/login",
   },
 });
 
@@ -143,6 +136,3 @@ export async function requireOrganizationMember(orgIdOrSlug: string) {
 
   return { user, member, organization: member.organization };
 }
-
-
-
