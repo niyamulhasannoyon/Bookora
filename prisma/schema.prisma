@@ -1,0 +1,332 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                        String                     @id @default(cuid())
+  name                      String?
+  email                     String                     @unique
+  emailVerified             DateTime?
+  password                  String?
+  image                     String?
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  accounts                  Account[]
+  sessions                  Session[]
+  memberships               OrganizationMember[]
+  googleCalendarConnections GoogleCalendarConnection[]
+  invitationsSent           Invitation[]               @relation("InvitedBy")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([email, token])
+}
+
+model Organization {
+  id                        String                     @id @default(cuid())
+  name                      String
+  slug                      String                     @unique
+  logo                      String?
+  bio                       String?
+  timezone                  String                     @default("UTC")
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  members                   OrganizationMember[]
+  services                  Service[]
+  availabilities            Availability[]
+  availabilityOverrides      AvailabilityOverride[]
+  bookings                  Booking[]
+  googleCalendarConnections GoogleCalendarConnection[]
+  invitations               Invitation[]
+  staffAvailabilities       StaffAvailability[]
+  staffAvailabilityOverrides StaffAvailabilityOverride[]
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  role           String       @default("MEMBER")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assignedServices ServiceStaff[]
+  assignedBookings Booking[]      @relation("AssignedStaff")
+  staffAvailabilities StaffAvailability[]
+  staffAvailabilityOverrides StaffAvailabilityOverride[]
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model Service {
+  id              String       @id @default(cuid())
+  organizationId  String
+  name            String
+  slug            String
+  description     String?
+  durationMinutes Int          @default(30)
+  price           Int          // Amount in cents (e.g. 5000 = $50.00)
+  currency        String       @default("usd")
+  bufferBefore    Int          @default(0) // in minutes
+  bufferAfter     Int          @default(0) // in minutes
+  minNoticeHours  Int          @default(0) // in hours
+  maxBookingDays  Int          @default(60) // in days
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bookings     Booking[]
+  assignedStaff ServiceStaff[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@index([organizationId, isActive])
+}
+
+model ServiceStaff {
+  id        String   @id @default(cuid())
+  serviceId String
+  memberId  String
+  createdAt DateTime @default(now())
+
+  service Service            @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  member  OrganizationMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, memberId])
+  @@index([serviceId])
+  @@index([memberId])
+}
+
+model Availability {
+  id             String       @id @default(cuid())
+  organizationId String
+  dayOfWeek      String       // MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY
+  startTime      String       // HH:mm format (e.g. "09:00")
+  endTime        String       // HH:mm format (e.g. "17:00")
+  isClosed       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([organizationId, dayOfWeek])
+}
+
+model AvailabilityOverride {
+  id             String       @id @default(cuid())
+  organizationId String
+  date           DateTime     // Specific date for override
+  startTime      String?      // HH:mm format
+  endTime        String?      // HH:mm format
+  isAvailable    Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([organizationId, date])
+}
+
+model StaffAvailability {
+  id             String             @id @default(cuid())
+  organizationId String
+  memberId       String
+  dayOfWeek      String             // MONDAY, TUESDAY, etc.
+  startTime      String             // HH:mm format
+  endTime        String             // HH:mm format
+  isClosed       Boolean            @default(false)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  member       OrganizationMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, dayOfWeek])
+  @@index([organizationId, memberId])
+}
+
+model StaffAvailabilityOverride {
+  id             String             @id @default(cuid())
+  organizationId String
+  memberId       String
+  date           DateTime
+  startTime      String?
+  endTime        String?
+  isAvailable    Boolean            @default(false)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  member       OrganizationMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, memberId])
+  @@index([memberId, date])
+}
+
+model Booking {
+  id                 String             @id @default(cuid())
+  organizationId     String
+  serviceId          String
+  staffId            String?
+  customerName       String
+  customerEmail      String
+  customerPhone      String?
+  notes              String?
+  startAt            DateTime
+  endAt              DateTime
+  timezone           String             @default("UTC")
+  status             String             @default("PENDING") // PENDING, CONFIRMED, CANCELLED, COMPLETED
+  paymentStatus      String             @default("UNPAID")  // UNPAID, PENDING, PAID, REFUNDED, FAILED
+  googleEventId      String?
+  calendarSyncStatus String             @default("PENDING") // PENDING, SYNCED, FAILED, NOT_CONNECTED, DELETED
+  calendarSyncError  String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  organization  Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  service       Service             @relation(fields: [serviceId], references: [id])
+  assignedStaff OrganizationMember? @relation("AssignedStaff", fields: [staffId], references: [id], onDelete: SetNull)
+  payment       Payment?
+  notifications Notification[]
+
+  @@index([organizationId])
+  @@index([serviceId])
+  @@index([staffId])
+  @@index([organizationId, startAt, endAt])
+  @@index([customerEmail])
+  @@index([status])
+}
+
+model Invitation {
+  id             String       @id @default(cuid())
+  organizationId String
+  email          String
+  role           String       @default("STAFF") // OWNER, ADMIN, STAFF
+  token          String       @unique
+  expiresAt      DateTime
+  used           Boolean      @default(false)
+  invitedById    String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy    User         @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
+  @@index([token])
+}
+
+model Payment {
+  id                    String   @id @default(cuid())
+  bookingId             String   @unique
+  stripeSessionId       String?  @unique
+  stripePaymentIntentId String?  @unique
+  amount                Int      // Amount in cents
+  currency              String   @default("usd")
+  status                String   @default("PENDING") // PENDING, SUCCEEDED, FAILED, REFUNDED
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([stripeSessionId])
+  @@index([stripePaymentIntentId])
+}
+
+model GoogleCalendarConnection {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  accessToken    String   // Encrypted token string
+  refreshToken   String   // Encrypted token string
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  bookingId String
+  type      String    // BOOKING_CONFIRMATION, PAYMENT_RECEIVED, CANCELLATION, RESCHEDULED, REMINDER_24H, REMINDER_1H
+  recipient String?   // Target email address
+  status    String    @default("PENDING") // PENDING, SENT, FAILED
+  attempts  Int       @default(0)
+  errorLog  String?
+  metadata  String?   // JSON payload for extra details (e.g. reschedule dates, reminder windows)
+  sentAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([status])
+  @@index([type])
+  @@index([bookingId, type, recipient])
+}
+
