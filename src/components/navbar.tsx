@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   Share2,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sidebar } from "@/components/sidebar";
@@ -90,6 +91,13 @@ export function Navbar({ orgSlug }: { orgSlug?: string }) {
               </>
             )}
 
+            <Link
+              href="/pricing"
+              className="text-xs font-semibold text-slate-400 hover:text-white transition-colors px-2 py-1 hidden sm:inline"
+            >
+              Pricing
+            </Link>
+
             {status === "authenticated" && user ? (
               <div className="relative">
                 <button
@@ -138,6 +146,16 @@ export function Navbar({ orgSlug }: { orgSlug?: string }) {
                       </div>
 
                       <div className="space-y-1">
+                        {user.isSuperAdmin && (
+                          <Link
+                            href="/super-admin"
+                            onClick={() => setDropdownOpen(false)}
+                            className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-semibold text-amber-400 hover:bg-amber-500/10 transition-colors"
+                          >
+                            <ShieldAlert className="h-3.5 w-3.5" />
+                            <span>Super Admin Panel</span>
+                          </Link>
+                        )}
                         <button
                           onClick={() => signOut({ callbackUrl: "/sign-in" })}
                           className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors text-left"

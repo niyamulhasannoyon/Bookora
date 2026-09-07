@@ -9,6 +9,7 @@ export const authConfig = {
       if (session.user && token.sub) {
         session.user.id = token.sub;
         session.user.emailVerified = token.emailVerified as Date | null;
+        session.user.isSuperAdmin = Boolean(token.isSuperAdmin);
       }
       return session;
     },

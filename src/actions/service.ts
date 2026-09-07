@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentOrganization, requirePermission, ForbiddenError, UnauthorizedError } from "@/lib/tenant";
 import { getTenantDb } from "@/lib/tenant-db";
 import { serviceSchema, ServiceInput } from "@/lib/validators";
+import { checkOrganizationPlanLimit } from "@/lib/plans";
 import { ApiResponse } from "@/types";
 
 /**
@@ -88,6 +89,15 @@ export async function createServiceAction(
 
     // Server-side permission check: enforce `manage_services` permission
     await requirePermission(tenant.organizationId, "manage_services");
+
+    // Plan quota enforcement: Check max active services
+    const limitCheck = await checkOrganizationPlanLimit(tenant.organizationId, "services");
+    if (!limitCheck.allowed) {
+      return {
+        success: false,
+        error: limitCheck.error || "Service limit reached for your current plan. Please upgrade to add more services.",
+      };
+    }
 
     // Zod Validation
     const validationResult = serviceSchema.safeParse(input);

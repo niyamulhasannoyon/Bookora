@@ -14,6 +14,7 @@ model User {
   emailVerified             DateTime?
   password                  String?
   image                     String?
+  isSuperAdmin              Boolean                    @default(false)
   createdAt                 DateTime                   @default(now())
   updatedAt                 DateTime                   @updatedAt
   accounts                  Account[]
@@ -78,6 +79,13 @@ model Organization {
   logo                      String?
   bio                       String?
   timezone                  String                     @default("UTC")
+  subscriptionPlan          String                     @default("FREE") // FREE, PRO, ENTERPRISE
+  subscriptionStatus        String                     @default("ACTIVE") // ACTIVE, PAST_DUE, CANCELLED, TRIALING
+  stripeCustomerId          String?                    @unique
+  stripeSubscriptionId      String?                    @unique
+  stripePriceId             String?
+  currentPeriodEnd          DateTime?
+  isSuspended               Boolean                    @default(false)
   createdAt                 DateTime                   @default(now())
   updatedAt                 DateTime                   @updatedAt
   members                   OrganizationMember[]

@@ -10,6 +10,7 @@ import {
   UnauthorizedError,
   ForbiddenError,
 } from "@/lib/tenant";
+import { checkOrganizationPlanLimit } from "@/lib/plans";
 import { ApiResponse, DayOfWeek, OrganizationRole } from "@/types";
 
 export interface InviteMemberInput {
@@ -35,6 +36,15 @@ export async function inviteTeamMember(
 ): Promise<ApiResponse<InviteMemberOutput>> {
   try {
     const tenant = await requirePermission(input.orgIdOrSlug, "manage_members");
+    // Enforce SaaS plan staff capacity limit
+    const limitCheck = await checkOrganizationPlanLimit(tenant.organizationId, "staff");
+    if (!limitCheck.allowed) {
+      return {
+        success: false,
+        error: limitCheck.error || "Team member capacity reached for your plan. Please upgrade to add more staff.",
+      };
+    }
+
     const tenantDb = getTenantDb(tenant.organizationId);
 
     const email = input.email.trim().toLowerCase();

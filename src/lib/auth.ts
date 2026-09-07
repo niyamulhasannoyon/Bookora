@@ -48,12 +48,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        const isSuperAdminUser =
+          Boolean(user.isSuperAdmin) ||
+          (process.env.SUPER_ADMIN_EMAILS || "")
+            .split(",")
+            .map((e) => e.trim().toLowerCase())
+            .filter(Boolean)
+            .includes(user.email.toLowerCase());
+
         return {
           id: user.id,
           name: user.name,
           email: user.email,
           image: user.image,
           emailVerified: user.emailVerified,
+          isSuperAdmin: isSuperAdminUser,
         };
       },
     }),
@@ -67,14 +76,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.sub = user.id;
         token.emailVerified = user.emailVerified;
+        token.isSuperAdmin = Boolean(user.isSuperAdmin);
       } else if (token.sub) {
         try {
           const dbUser = await db.user.findUnique({
             where: { id: token.sub },
-            select: { emailVerified: true },
+            select: { email: true, emailVerified: true, isSuperAdmin: true },
           });
           if (dbUser) {
             token.emailVerified = dbUser.emailVerified;
+            const isConfiguredAdmin =
+              Boolean(dbUser.isSuperAdmin) ||
+              (process.env.SUPER_ADMIN_EMAILS || "")
+                .split(",")
+                .map((e) => e.trim().toLowerCase())
+                .filter(Boolean)
+                .includes(dbUser.email?.toLowerCase() || "");
+            token.isSuperAdmin = isConfiguredAdmin;
           }
         } catch {
           // Ignore DB error during JWT refresh fallback

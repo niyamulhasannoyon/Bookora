@@ -37,6 +37,25 @@ export async function POST(req: Request) {
       case "checkout.session.completed": {
         const session = event.data.object;
         const bookingId = session.metadata?.bookingId;
+        const organizationId = session.metadata?.organizationId;
+        const planTier = session.metadata?.planTier;
+
+        // Handle SaaS Subscription Checkout completion
+        if (session.mode === "subscription" && organizationId) {
+          const customerId = typeof session.customer === "string" ? session.customer : (session.customer as any)?.id;
+          const subscriptionId = typeof session.subscription === "string" ? session.subscription : (session.subscription as any)?.id;
+
+          await db.organization.update({
+            where: { id: organizationId },
+            data: {
+              subscriptionPlan: planTier || "PRO",
+              subscriptionStatus: "ACTIVE",
+              ...(customerId ? { stripeCustomerId: customerId } : {}),
+              ...(subscriptionId ? { stripeSubscriptionId: subscriptionId } : {}),
+            },
+          });
+          break;
+        }
 
         if (bookingId) {
           // Fetch existing booking first to check for idempotency
@@ -92,6 +111,85 @@ export async function POST(req: Request) {
               console.error("Failed to send booking confirmation email:", emailErr);
             }
           }
+        }
+        break;
+      }
+
+      case "customer.subscription.created":
+      case "customer.subscription.updated": {
+        const subscription = event.data.object as any;
+        const status =
+          subscription.status === "active"
+            ? "ACTIVE"
+            : subscription.status === "past_due"
+            ? "PAST_DUE"
+            : subscription.status === "trialing"
+            ? "TRIALING"
+            : "CANCELLED";
+
+        const currentPeriodEnd = subscription.current_period_end
+          ? new Date(subscription.current_period_end * 1000)
+          : null;
+
+        const orgId = subscription.metadata?.organizationId;
+        const customerId = typeof subscription.customer === "string" ? subscription.customer : undefined;
+
+        if (orgId) {
+          await db.organization.update({
+            where: { id: orgId },
+            data: {
+              subscriptionStatus: status,
+              currentPeriodEnd,
+              stripeSubscriptionId: subscription.id,
+              ...(customerId ? { stripeCustomerId: customerId } : {}),
+            },
+          });
+        } else if (customerId) {
+          await db.organization.updateMany({
+            where: { stripeCustomerId: customerId },
+            data: {
+              subscriptionStatus: status,
+              currentPeriodEnd,
+              stripeSubscriptionId: subscription.id,
+            },
+          });
+        }
+        break;
+      }
+
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as any;
+        const orgId = subscription.metadata?.organizationId;
+        const customerId = typeof subscription.customer === "string" ? subscription.customer : undefined;
+
+        if (orgId) {
+          await db.organization.update({
+            where: { id: orgId },
+            data: {
+              subscriptionPlan: "FREE",
+              subscriptionStatus: "CANCELLED",
+            },
+          });
+        } else if (customerId) {
+          await db.organization.updateMany({
+            where: { stripeCustomerId: customerId },
+            data: {
+              subscriptionPlan: "FREE",
+              subscriptionStatus: "CANCELLED",
+            },
+          });
+        }
+        break;
+      }
+
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as any;
+        const customerId = typeof invoice.customer === "string" ? invoice.customer : undefined;
+        if (customerId) {
+          await db.organization.updateMany({
+            where: { stripeCustomerId: customerId },
+            data: { subscriptionStatus: "PAST_DUE" },
+          });
         }
         break;
       }

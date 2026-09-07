@@ -77,3 +77,90 @@ export async function createBookingCheckoutSession(params: {
 
   return session;
 }
+
+export async function createSubscriptionCheckoutSession(params: {
+  organizationId: string;
+  planName: string;
+  planDescription: string;
+  planTier: string;
+  amountCents: number;
+  interval: "month" | "year";
+  customerEmail: string;
+  successUrl: string;
+  cancelUrl: string;
+}) {
+  const {
+    organizationId,
+    planName,
+    planDescription,
+    planTier,
+    amountCents,
+    interval,
+    customerEmail,
+    successUrl,
+    cancelUrl,
+  } = params;
+
+  if (isStripeMock()) {
+    return {
+      id: `cs_sub_mock_${Date.now()}`,
+      url: `${successUrl}?session_id=cs_sub_mock_${Date.now()}&plan=${planTier}`,
+    };
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    customer_email: customerEmail,
+    line_items: [
+      {
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: `Bookora ${planName} Plan`,
+            description: planDescription,
+          },
+          unit_amount: amountCents,
+          recurring: {
+            interval,
+          },
+        },
+        quantity: 1,
+      },
+    ],
+    mode: "subscription",
+    metadata: {
+      organizationId,
+      planTier,
+      interval,
+    },
+    subscription_data: {
+      metadata: {
+        organizationId,
+        planTier,
+      },
+    },
+    success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}&plan=${planTier}`,
+    cancel_url: cancelUrl,
+  });
+
+  return session;
+}
+
+export async function createBillingPortalSession(params: {
+  stripeCustomerId: string;
+  returnUrl: string;
+}) {
+  if (isStripeMock() || !params.stripeCustomerId) {
+    return {
+      url: `${params.returnUrl}?notice=portal_mock`,
+    };
+  }
+
+  const portalSession = await stripe.billingPortal.sessions.create({
+    customer: params.stripeCustomerId,
+    return_url: params.returnUrl,
+  });
+
+  return portalSession;
+}
+

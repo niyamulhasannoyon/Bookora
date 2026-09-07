@@ -37,7 +37,8 @@ export default auth((req) => {
   // Protected route checking:
   const isProtectedPath =
     nextUrl.pathname.startsWith("/onboarding") ||
-    nextUrl.pathname.startsWith("/dashboard");
+    nextUrl.pathname.startsWith("/dashboard") ||
+    nextUrl.pathname.startsWith("/super-admin");
 
   if (isProtectedPath && !isLoggedIn) {
     const callbackUrl = encodeURIComponent(nextUrl.pathname + nextUrl.search);
