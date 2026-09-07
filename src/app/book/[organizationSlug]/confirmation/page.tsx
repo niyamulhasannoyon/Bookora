@@ -130,7 +130,7 @@ export default async function BookingConfirmationPage({ params, searchParams }: 
                       Special Notes
                     </span>
                     <p className="text-xs text-slate-300 italic bg-slate-900/40 p-3 rounded-xl border border-slate-800/60">
-                      "{booking.notes}"
+                      &ldquo;{booking.notes}&rdquo;
                     </p>
                   </div>
                 )}

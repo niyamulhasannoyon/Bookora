@@ -5,6 +5,20 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_mock_
   typescript: true,
 });
 
+export function isStripeMock(): boolean {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (
+    !key ||
+    key === "sk_test_mock_key" ||
+    key === "sk_live_your_stripe_secret_key" ||
+    key.includes("your_stripe_secret_key") ||
+    process.env.NODE_ENV === "test"
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export async function createBookingCheckoutSession(params: {
   bookingId: string;
   serviceName: string;
@@ -29,7 +43,7 @@ export async function createBookingCheckoutSession(params: {
   } = params;
 
   // In test/mock mode if no real key provided
-  if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === "sk_test_mock_key") {
+  if (isStripeMock()) {
     return {
       id: `cs_test_mock_${Date.now()}`,
       url: `${successUrl}?session_id=cs_test_mock_${Date.now()}&booking_id=${bookingId}`,

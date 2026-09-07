@@ -703,7 +703,7 @@ export function PublicBookingWizard({ organization, services }: PublicBookingWiz
                   {notes && (
                     <div className="border-b border-slate-800/80 pb-3">
                       <span className="text-xs uppercase font-bold text-slate-400 block mb-1">Notes</span>
-                      <span className="text-xs text-slate-300 italic">"{notes}"</span>
+                      <span className="text-xs text-slate-300 italic">&ldquo;{notes}&rdquo;</span>
                     </div>
                   )}
 

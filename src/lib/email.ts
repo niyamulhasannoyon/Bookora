@@ -12,6 +12,20 @@ import {
   CommonTemplateParams,
 } from "./email-templates";
 
+export function isResendMock(): boolean {
+  const key = process.env.RESEND_API_KEY;
+  if (
+    !key ||
+    key === "re_mock_key" ||
+    key === "re_your_resend_api_key" ||
+    key.includes("your_resend_api_key") ||
+    process.env.NODE_ENV === "test"
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export const resend = new Resend(process.env.RESEND_API_KEY || "re_mock_key");
 
 export interface RecipientInfo {
@@ -100,7 +114,7 @@ async function sendSingleEmailWithRetry(params: {
   const { to, subject, html, maxAttempts = 3 } = params;
   const from = process.env.EMAIL_FROM || "Bookora <notifications@bookora.com>";
 
-  if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === "re_mock_key") {
+  if (isResendMock()) {
     console.log(`[Mock Email Sent] To: ${to} | Subject: ${subject}`);
     return { success: true, messageId: `mock_msg_${Date.now()}_${Math.random().toString(36).substring(7)}` };
   }
@@ -413,7 +427,7 @@ export async function sendVerificationEmail(params: { email: string; token: stri
     </div>
   `;
 
-  if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === "re_mock_key") {
+  if (isResendMock()) {
     console.log(`[Mock Verification Email Sent] To: ${email} | Link: ${verifyLink}`);
     return { id: `msg_verify_mock_${Date.now()}` };
   }
@@ -447,7 +461,7 @@ export async function sendPasswordResetEmail(params: { email: string; token: str
     </div>
   `;
 
-  if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === "re_mock_key") {
+  if (isResendMock()) {
     console.log(`[Mock Password Reset Email Sent] To: ${email} | Link: ${resetLink}`);
     return { id: `msg_reset_mock_${Date.now()}` };
   }

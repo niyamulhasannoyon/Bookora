@@ -199,5 +199,5 @@ const rawPostHandler = async (req: Request) => {
   }
 };
 
-export const POST = withCsrfProtection(rawPostHandler);
+export const POST = withCsrfProtection(rawPostHandler, { isPublicEndpoint: true });
 

@@ -50,7 +50,7 @@ export default async function EditServicePage({
             <div>
               <h1 className="text-3xl font-extrabold text-white">Edit Service</h1>
               <p className="text-slate-400 text-sm mt-1">
-                Update parameters, duration, price, and settings for "{service.name}".
+                Update parameters, duration, price, and settings for &ldquo;{service.name}&rdquo;.
               </p>
             </div>
           </div>

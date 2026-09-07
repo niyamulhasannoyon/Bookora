@@ -105,7 +105,7 @@ export async function requireAuth() {
   const user = await getCurrentUser();
   if (!user || !user.id) {
     const { redirect } = await import("next/navigation");
-    redirect("/login");
+    redirect("/sign-in");
     throw new Error("Unauthorized");
   }
   return user as typeof user & { id: string };

@@ -14,6 +14,7 @@ export * from "./service";
 export * from "./availability";
 export * from "./booking";
 export * from "./team";
+export * from "./organization";
 
 export async function placeholderAction() {
   return { success: true, message: "Server actions initialized." };

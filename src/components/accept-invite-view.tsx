@@ -37,8 +37,8 @@ export function AcceptInviteView({
 
   const handleAccept = async () => {
     if (!currentUser) {
-      // Redirect to login with return back url
-      router.push(`/login?callbackUrl=${encodeURIComponent(`/accept-invite?token=${token}`)}`);
+      // Redirect to sign-in with return back url
+      router.push(`/sign-in?callbackUrl=${encodeURIComponent(`/accept-invite?token=${token}`)}`);
       return;
     }
 

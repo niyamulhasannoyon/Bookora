@@ -766,7 +766,7 @@ export function PublicBookingFlow({
                   {customerPhone && <div className="text-xs text-slate-400">{customerPhone}</div>}
                   {notes && (
                     <div className="text-xs text-slate-300 italic mt-1 bg-slate-950/40 p-2 rounded-xl border border-slate-800">
-                      "{notes}"
+                      &ldquo;{notes}&rdquo;
                     </div>
                   )}
                 </div>

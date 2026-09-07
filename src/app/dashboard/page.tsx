@@ -196,7 +196,7 @@ export default async function DashboardOverviewPage() {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <Link href={`/${slug}`} target="_blank">
+              <Link href={`/book/${slug}`} target="_blank">
                 <Button variant="outline" className="gap-2 border-slate-800 hover:bg-slate-900">
                   <span>Public Booking Link</span>
                   <ExternalLink className="h-4 w-4" />
@@ -247,7 +247,7 @@ export default async function DashboardOverviewPage() {
                   <div>
                     <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
                       <Clock className="h-5 w-5 text-violet-400" />
-                      Today's Appointments ({todayAppointments.length})
+                      Today&apos;s Appointments ({todayAppointments.length})
                     </CardTitle>
                     <CardDescription>
                       Appointments scheduled for {now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}.

@@ -19,6 +19,9 @@ import Link from "next/link";
 
 import { ShareBookingModal } from "@/components/booking/share-booking-modal";
 
+import { updateOrganizationAction } from "@/actions/organization";
+import { AlertCircle } from "lucide-react";
+
 interface SettingsViewProps {
   organization: {
     id: string;
@@ -37,6 +40,8 @@ export function SettingsView({ organization }: SettingsViewProps) {
   const [timezone, setTimezone] = useState(organization.timezone || "America/New_York");
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const publicUrl = typeof window !== "undefined"
@@ -49,10 +54,32 @@ export function SettingsView({ organization }: SettingsViewProps) {
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setSaving(true);
+    setError(null);
+    setSaved(false);
+
+    try {
+      const res = await updateOrganizationAction({
+        id: organization.id,
+        name,
+        slug,
+        bio,
+        timezone,
+      });
+
+      if (res.success) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 4000);
+      } else {
+        setError(res.error || "Failed to update settings.");
+      }
+    } catch (err: any) {
+      setError(err?.message || "An unexpected error occurred.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -188,15 +215,26 @@ export function SettingsView({ organization }: SettingsViewProps) {
               </select>
             </div>
 
+            {error && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+                <span>{error}</span>
+              </div>
+            )}
+
             <div className="pt-2 flex items-center justify-between">
               {saved && (
-                <span className="text-xs text-emerald-400 flex items-center gap-1">
+                <span className="text-xs text-emerald-400 flex items-center gap-1 font-medium">
                   <Check className="h-4 w-4" /> Profile settings saved!
                 </span>
               )}
-              <Button type="submit" className="ml-auto bg-violet-600 hover:bg-violet-500 text-white text-xs gap-1.5">
+              <Button
+                type="submit"
+                disabled={saving}
+                className="ml-auto bg-violet-600 hover:bg-violet-500 text-white text-xs gap-1.5"
+              >
                 <Save className="h-4 w-4" />
-                <span>Save Profile Settings</span>
+                <span>{saving ? "Saving Changes..." : "Save Profile Settings"}</span>
               </Button>
             </div>
           </form>

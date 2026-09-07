@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { slugify } from "@/lib/utils";
 
+import { createOrganizationAction } from "@/actions/organization";
+import { AlertCircle } from "lucide-react";
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -14,6 +17,7 @@ export default function OnboardingPage() {
   const [category, setCategory] = useState("Salon & Beauty");
   const [timezone, setTimezone] = useState("America/New_York");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleNameChange = (val: string) => {
     setName(val);
@@ -23,12 +27,27 @@ export default function OnboardingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const finalSlug = slug || slugify(name) || "my-business";
+    setError(null);
 
-    // Navigate to tenant dashboard
-    setTimeout(() => {
-      router.push(`/dashboard`);
-    }, 600);
+    try {
+      const res = await createOrganizationAction({
+        name,
+        slug,
+        bio: `Professional services in ${category}`,
+        timezone,
+      });
+
+      if (res.success && res.data) {
+        router.push("/dashboard");
+        router.refresh();
+      } else {
+        setError(res.error || "Failed to create organization. Please try again.");
+        setIsSubmitting(false);
+      }
+    } catch (err: any) {
+      setError(err?.message || "An unexpected error occurred. Please try again.");
+      setIsSubmitting(false);
+    }
   };
 
   const categories = [
@@ -115,6 +134,13 @@ export default function OnboardingPage() {
                 <option value="Asia/Tokyo">Tokyo (JST)</option>
               </select>
             </div>
+
+            {error && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+                <span>{error}</span>
+              </div>
+            )}
 
             <div className="pt-4">
               <Button type="submit" size="lg" disabled={isSubmitting} className="w-full gap-2">

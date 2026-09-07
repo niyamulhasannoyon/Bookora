@@ -26,13 +26,15 @@ interface BillingViewProps {
 
 export function BillingView({ stats }: BillingViewProps) {
   const [upgrading, setUpgrading] = useState(false);
+  const [portalNotice, setPortalNotice] = useState<string | null>(null);
 
   const handlePortalRedirect = () => {
     setUpgrading(true);
     setTimeout(() => {
-      alert("Redirecting to Stripe Customer Portal...");
+      setPortalNotice("Stripe Customer Portal will open in a secure window once your production Stripe API keys are configured.");
       setUpgrading(false);
-    }, 1000);
+      setTimeout(() => setPortalNotice(null), 6000);
+    }, 600);
   };
 
   const invoices = [
@@ -85,7 +87,7 @@ export function BillingView({ stats }: BillingViewProps) {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col items-start sm:items-end gap-2">
             <Button
               onClick={handlePortalRedirect}
               disabled={upgrading}
@@ -94,6 +96,11 @@ export function BillingView({ stats }: BillingViewProps) {
               <CreditCard className="h-4 w-4" />
               <span>{upgrading ? "Loading..." : "Manage Billing in Stripe"}</span>
             </Button>
+            {portalNotice && (
+              <p className="text-[11px] text-violet-300 bg-violet-950/40 border border-violet-500/30 px-3 py-1.5 rounded-lg max-w-sm">
+                {portalNotice}
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

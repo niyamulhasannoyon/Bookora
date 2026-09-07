@@ -78,7 +78,7 @@ export function validateCsrfOrigin(req: Request): { valid: boolean; reason?: str
   // For embed routes, allow the embed origin
   if (process.env.EMBED_ALLOWED_ORIGINS) {
     const embedOrigins = process.env.EMBED_ALLOWED_ORIGINS.split(",").map((o) => o.trim());
-    if (embedOrigins.includes(originHost)) {
+    if (embedOrigins.includes("*") || embedOrigins.includes(originHost)) {
       return { valid: true };
     }
   }
@@ -93,7 +93,7 @@ export function validateCsrfOrigin(req: Request): { valid: boolean; reason?: str
  */
 export function withCsrfProtection(
   handler: (req: Request) => Promise<NextResponse>,
-  options: { skipMethods?: string[] } = {}
+  options: { skipMethods?: string[]; isPublicEndpoint?: boolean } = {}
 ) {
   return async (req: Request): Promise<NextResponse> => {
     const method = req.method.toUpperCase();
@@ -106,6 +106,12 @@ export function withCsrfProtection(
 
     // Check for authorization header (Bearer token, Basic auth, etc.)
     if (req.headers.get("authorization")) {
+      return handler(req);
+    }
+
+    // Public endpoints (e.g., booking form submission in an embedded iframe)
+    // are open to external origins and are secured by rate limiting and transaction locks
+    if (options.isPublicEndpoint) {
       return handler(req);
     }
 
