@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import {
   UserCheck,
   Plus,
@@ -311,10 +312,13 @@ export function TeamView({
                   <tr key={m.id} className="hover:bg-slate-800/40 transition-colors">
                     <td className="py-4 font-medium text-white flex items-center gap-3">
                       {m.image ? (
-                        <img
+                        <Image
                           src={m.image}
                           alt={m.name}
+                          width={36}
+                          height={36}
                           className="h-9 w-9 rounded-full object-cover border border-violet-500/30"
+                          unoptimized
                         />
                       ) : (
                         <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center font-bold text-white text-xs">

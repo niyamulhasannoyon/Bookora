@@ -2,8 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentOrganization } from "@/lib/tenant";
 import { db } from "@/lib/db";
-import { Navbar } from "@/components/navbar";
-import { Sidebar } from "@/components/sidebar";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/utils";
@@ -36,16 +34,21 @@ export default async function DashboardOverviewPage() {
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
   const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
-  // 2. Fetch Tenant Isolated Metrics
+  // 2. Fetch Tenant Isolated Metrics with optimized consolidated queries
   const [
+    statusCounts,
     todayCount,
     upcomingCount,
     totalCount,
-    completedCount,
-    cancelledCount,
     paidPayments,
     allBookings,
   ] = await Promise.all([
+    // Status breakdown in 1 query
+    db.booking.groupBy({
+      by: ["status"],
+      where: { organizationId },
+      _count: { _all: true },
+    }),
     // Today's Bookings
     db.booking.count({
       where: {
@@ -58,22 +61,13 @@ export default async function DashboardOverviewPage() {
       where: {
         organizationId,
         startAt: { gte: now },
-        status: { not: "CANCELLED" },
       },
     }),
     // Total Bookings
     db.booking.count({
       where: { organizationId },
     }),
-    // Completed Bookings
-    db.booking.count({
-      where: { organizationId, status: "COMPLETED" },
-    }),
-    // Cancelled Bookings
-    db.booking.count({
-      where: { organizationId, status: "CANCELLED" },
-    }),
-    // Revenue sum from payments
+    // Paid Revenue
     db.payment.aggregate({
       where: {
         booking: { organizationId },
@@ -81,17 +75,26 @@ export default async function DashboardOverviewPage() {
       },
       _sum: { amount: true },
     }),
-    // Recent Bookings list with service and payment details
+    // All Bookings for display
     db.booking.findMany({
       where: { organizationId },
       include: {
         service: true,
-        payment: true,
+        assignedStaff: {
+          include: {
+            user: { select: { name: true, email: true, image: true } },
+          },
+        },
       },
-      orderBy: { startAt: "desc" },
-      take: 20,
+      orderBy: { startAt: "asc" },
+      take: 50,
     }),
   ]);
+
+  const completedCount =
+    statusCounts.find((s) => s.status === "COMPLETED")?._count._all || 0;
+  const cancelledCount =
+    statusCounts.find((s) => s.status === "CANCELLED")?._count._all || 0;
 
   const totalRevenueInCents = paidPayments._sum.amount || 0;
 
@@ -178,14 +181,8 @@ export default async function DashboardOverviewPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <Navbar orgSlug={slug} />
-      <div className="flex">
-        <div className="hidden lg:block">
-          <Sidebar orgSlug={slug} />
-        </div>
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-8">
-          {/* Header */}
+    <div className="space-y-8">
+      {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold capitalize text-white tracking-tight">
@@ -452,8 +449,6 @@ export default async function DashboardOverviewPage() {
               </Card>
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+        </div>
   );
 }

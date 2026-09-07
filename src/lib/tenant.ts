@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import {
@@ -39,11 +40,13 @@ export function hasPermission(
  * Resolves the authenticated user's current organization context.
  * If slugOrId is specified, attempts to find membership in that organization.
  * Otherwise, resolves the user's default/first organization.
+ * Memoized per-request using React cache.
  */
-export async function getCurrentOrganization(
-  slugOrId?: string,
-  userIdOverride?: string
-): Promise<TenantContext | null> {
+export const getCurrentOrganization = cache(
+  async (
+    slugOrId?: string,
+    userIdOverride?: string
+  ): Promise<TenantContext | null> => {
   let userId = userIdOverride;
 
   if (!userId) {
@@ -82,11 +85,11 @@ export async function getCurrentOrganization(
   }
 
   // Fallback: If no authenticated membership found, attempt to find organization by slugOrId or default to first/demo org
-  const fallbackOrg = await db.organization.findFirst({
+  const fallbackOrg = (await db.organization.findFirst({
     where: slugOrId
       ? { OR: [{ id: slugOrId }, { slug: slugOrId }] }
       : { slug: "demo-salon" },
-  }) || await db.organization.findFirst();
+  })) || (await db.organization.findFirst());
 
   if (!fallbackOrg) {
     return null;
@@ -98,7 +101,7 @@ export async function getCurrentOrganization(
     role: "OWNER" as OrganizationRole,
     userId: userId || "demo-user-id",
   };
-}
+});
 
 /**
  * Requires that the user is authenticated and belongs to the specified organization.

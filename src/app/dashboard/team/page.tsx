@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentOrganization } from "@/lib/tenant";
 import { getTenantDb } from "@/lib/tenant-db";
-import { Navbar } from "@/components/navbar";
-import { Sidebar } from "@/components/sidebar";
 import { TeamView, TeamMemberRecord } from "@/components/dashboard/team-view";
 import { OrganizationRole } from "@/types";
 
@@ -48,24 +46,14 @@ export default async function DashboardTeamPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <Navbar orgSlug={tenant.slug} />
-      <div className="flex">
-        <div className="hidden lg:block">
-          <Sidebar orgSlug={tenant.slug} />
-        </div>
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
-          <TeamView
-            orgSlug={tenant.slug}
-            initialMembers={members}
-            services={services}
-            initialInvitations={invitations}
-            currentUserRole={tenant.role}
-            currentUserId={tenant.userId}
-          />
-        </main>
-      </div>
-    </div>
+    <TeamView
+      orgSlug={tenant.slug}
+      initialMembers={members}
+      services={services}
+      initialInvitations={invitations}
+      currentUserRole={tenant.role}
+      currentUserId={tenant.userId}
+    />
   );
 }
 

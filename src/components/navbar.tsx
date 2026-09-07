@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import {
   Calendar,
@@ -96,10 +97,13 @@ export function Navbar({ orgSlug }: { orgSlug?: string }) {
                   className="flex items-center gap-2.5 rounded-full border border-slate-800 bg-slate-900/90 pl-1.5 pr-3 py-1 text-left text-xs font-medium text-slate-200 hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/40"
                 >
                   {user.image ? (
-                    <img
+                    <Image
                       src={user.image}
                       alt={user.name || "User Profile"}
+                      width={28}
+                      height={28}
                       className="h-7 w-7 rounded-full object-cover border border-violet-500/30"
+                      unoptimized
                     />
                   ) : (
                     <div className="h-7 w-7 rounded-full bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center font-bold text-white text-xs">

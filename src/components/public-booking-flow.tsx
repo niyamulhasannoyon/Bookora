@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { format, addDays, isBefore, startOfDay } from "date-fns";
 import {
   Calendar as CalendarIcon,
@@ -213,10 +214,13 @@ export function PublicBookingFlow({
           <CardHeader className="pb-4">
             <div className="flex items-center gap-3">
               {organization.logo ? (
-                <img
+                <Image
                   src={organization.logo}
                   alt={organization.name}
+                  width={48}
+                  height={48}
                   className="h-12 w-12 rounded-2xl object-cover border border-violet-500/30"
+                  unoptimized
                 />
               ) : (
                 <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-lg shadow-md shadow-violet-500/20">
